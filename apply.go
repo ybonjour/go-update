@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/satori/go.uuid"
 	"io"
 	"io/ioutil"
 	"os"
@@ -105,8 +106,14 @@ func Apply(update io.Reader, opts Options) error {
 	updateDir := filepath.Dir(opts.TargetPath)
 	filename := filepath.Base(opts.TargetPath)
 
+
 	// Copy the contents of newbinary to a new executable file
-	newPath := filepath.Join(updateDir, fmt.Sprintf(".%s.new", filename))
+	// (ensure that filename is different for every execution, in case multiple executions run concurrently)
+	uniqueId, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+	newPath := filepath.Join(updateDir, fmt.Sprintf(".%s-%s.new", filename, uniqueId))
 	fp, err := openFile(newPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, opts.TargetMode)
 	if err != nil {
 		return err
@@ -239,7 +246,12 @@ func (o *Options) CheckPermissions() error {
 	fileName := filepath.Base(path)
 
 	// attempt to open a file in the file's directory
-	newPath := filepath.Join(fileDir, fmt.Sprintf(".%s.new", fileName))
+	uniqueId, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+
+	newPath := filepath.Join(fileDir, fmt.Sprintf(".%s-%s.new", fileName, uniqueId))
 	fp, err := openFile(newPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, o.TargetMode)
 	if err != nil {
 		return err

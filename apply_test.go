@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/inconshreveable/go-update/internal/binarydist"
@@ -23,7 +24,7 @@ var (
 
 func cleanup(path string) {
 	os.Remove(path)
-	os.Remove(fmt.Sprintf(".%s.new", path))
+	removeFiles(fmt.Sprintf(".%s-*.new", path))
 }
 
 // we write with a separate name for each test so that we can run them in parallel
@@ -396,5 +397,18 @@ func TestWriteError(t *testing.T) {
 	err := Apply(bytes.NewReader(newFile), Options{TargetPath: fName})
 	if err == nil {
 		t.Fatalf("Allowed an update to an empty file")
+	}
+}
+
+func removeFiles(pattern string) {
+	files, err := filepath.Glob(pattern)
+	if err != nil {
+    	panic(err)
+	}
+	for _, f := range files {
+		err := os.Remove(f)
+		if err != nil {
+        	panic(err)
+    	}
 	}
 }
